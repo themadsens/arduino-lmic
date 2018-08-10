@@ -14,6 +14,12 @@ static const int NUM_DIO = 3;
 
 // be careful of alignment below.
 struct lmic_pinmap {
+#if defined(ESP32) || defined(NRF51)
+  #define LMIC_SPI_PINS_IN_MAPPING
+    u1_t mosi;
+    u1_t miso;
+    u1_t sck;
+#endif
     u1_t nss;                   // byte 0: pin for select
     u1_t rxtx;                  // byte 1: pin for rx/tx control
     u1_t rst;                   // byte 2: pin for reset

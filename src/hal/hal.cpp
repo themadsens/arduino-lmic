@@ -1,4 +1,4 @@
-/*******************************************************************************
+/******************************************************************************
  * Copyright (c) 2015 Matthijs Kooijman
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -26,6 +26,11 @@ static void hal_io_init () {
     ASSERT(plmic_pins->nss != LMIC_UNUSED_PIN);
     ASSERT(plmic_pins->dio[0] != LMIC_UNUSED_PIN);
     ASSERT(plmic_pins->dio[1] != LMIC_UNUSED_PIN || plmic_pins->dio[2] != LMIC_UNUSED_PIN);
+#ifdef LMIC_SPI_PINS_IN_MAPPING
+    ASSERT(lmic_pins.mosi != LMIC_UNUSED_PIN
+        || lmic_pins.miso != LMIC_UNUSED_PIN
+        || lmic_pins.sck != LMIC_UNUSED_PIN);
+#endif
 
 //    Serial.print("nss: "); Serial.println(plmic_pins->nss);
 //    Serial.print("rst: "); Serial.println(plmic_pins->rst);
@@ -132,8 +137,20 @@ static void hal_io_check() {
 // -----------------------------------------------------------------------------
 // SPI
 
+/*
+ * Initialize SPI, allowing override of default SPI pins on certain boards.
+ */
 static void hal_spi_init () {
-    SPI.begin();
+  #if defined(ESP32)
+    // On the ESP32 the default is _use_hw_ss(false), 
+    // so we can set the last parameter to anything.
+    SPI.begin(lmic_pins.sck, lmic_pins.miso, lmic_pins.mosi, 0x00);
+  #elif defined(NRF51)
+    SPI.begin(lmic_pins.sck, lmic_pins.mosi, lmic_pins.miso);
+  #else
+    //unknown board, or board without SPI pin select ability
+    SPI.begin(); 
+  #endif
 }
 
 void hal_pin_nss (u1_t val) {
